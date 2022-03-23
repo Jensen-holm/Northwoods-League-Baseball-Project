@@ -1,4 +1,7 @@
-#%% """ Selenium NWDS Crawler """
+#%% """ Selenium version of the Baseball Reference Crawler """
+
+""" This scraper takes a much longer time to run get_league_hist than the beautiful soup scraper, you will also have to download a webdriver.
+But you will get to watch selenium do it's magic. I would only reccommend running get_league_hist on a small league """
 
 """ Libraries """
 import pandas as pd
@@ -6,7 +9,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+#from selenium.webdriver.support.ui import WebDriverWait
+from tqdm import tqdm
 
 #%% """" Scrape Baseball Reference class """"
 
@@ -36,22 +40,26 @@ class scrape_br():
         for i,yr in enumerate(tm_list):
             for j, team in enumerate(yr):
                 tm_list[i][j] = team.split(',')
-        plyr_list = []
-        for tm in tm_list:
-            for player in tm:
+        self.plyr_list = []
+        for tm in tqdm(tm_list):
+            for player in tqdm(tm):
                 for player_link in player:
                     self.driver.get(player_link)
-                    plyr_list.append(self.find_plyr_links_bat())
-                    plyr_list.append(self.find_plyr_links_pit())
+                    self.plyr_list.append(self.find_plyr_links_bat())
+                    self.plyr_list.append(self.find_plyr_links_pit())
+        print(len(self.plyr_list))
+        for i in self.plyr_list:
+            print(len(i))
+
         plyr_data = []
-        for team in plyr_list:
-            for player in team:
+        for team in tqdm(plyr_list):
+            for player in tqdm(team):
                 self.driver.get(player)
                 try:
-                    plyr_data.append(self.find_bat_tables())
+                   plyr_data.append(self.find_bat_tables())
                 except:
                     plyr_data.append(self.find_pitch_tables())
-        return plyr_data
+            return plyr_data
 
     def find_tm_links(self):
         for i in range(1):
@@ -98,14 +106,21 @@ class scrape_br():
     def find_plyr_links_pit(self):
         table = self.driver.find_element(By.ID, "team_pitching")
         tbody = table.find_element(By.TAG_NAME, "tbody")
-        tr_list = tbody.find_elements(By.TAG_NAME, 'td')
-        tags = []
+        tr_list = tbody.find_elements(By.TAG_NAME, 'tr')
+        a_tags = []
         for row in tr_list:
-            tags.append(row.find_element(By.TAG_NAME, "a"))
-        tm_list = []
-        for link in tags:
-                tm_list.append(link.get_attribute("href"))
-        return tm_list
+            try:
+             a_tags.append(row.find_elements(By.TAG_NAME, "a"))
+            except:
+                print("Could not get player links in find_plyr_links_bat")
+        player_hrefs = []
+        for nested_tag in a_tags:
+            for tag in nested_tag:
+                try:
+                    player_hrefs.append(tag.get_attribute("href"))
+                except:
+                    print("could not successfully implement find_plyr_links_bat")
+        return player_hrefs
 
     def find_bat_tables(self):
         x = self.bat_txt = self.driver.find_element(By.ID, "div_standard_batting")
@@ -122,6 +137,3 @@ class scrape_br():
 #%% test 
 lg = scrape_br()
 nwds_hist = lg.get_league_hist("https://www.baseball-reference.com/register/league.cgi?code=NWDS&class=Smr")
-#%% testing
-
-
