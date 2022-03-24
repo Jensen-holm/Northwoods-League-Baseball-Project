@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 from tqdm import tqdm
-import sqlite3
 #%% """ General Functions """
 
 class scrape_baseball_reference():
