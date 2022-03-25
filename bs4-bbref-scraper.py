@@ -93,8 +93,8 @@ class scrape_baseball_reference():
 
     # sqlite functions
     def move_to_sql(self, df, data_base_name, table_name):
-        conn = sqlite3.connect(data_base_name + ".db")
-        return df.to_sql(name = table_name, con = conn, if_exists = "replace"), conn
+        conn = sqlite3.connect(data_base_name + ".db", if_exists = "replace")
+        return df.to_sql(name = table_name, con = conn, if_exists = "replace")
     
     def start_sql(self, db):
         self.conn = sqlite3.connect(database= db, if_exists)
