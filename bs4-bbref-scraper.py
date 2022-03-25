@@ -20,20 +20,16 @@ class scrape_baseball_reference():
 
     # General scraping functions
     def find_first_table_data(self, url):
-        first_table = pd.read_html(url)
-        return first_table[0]
+        return pd.read_html(url)[0]
 
     def sewp(self, url):
         webpage = requests.get(url)
-        html = BeautifulSoup(webpage.text, features = 'lxml')
-        return html
+        return BeautifulSoup(webpage.text, features = 'lxml')
 
     def find_links(self, url):
         html = self.sewp(url)
         href_tags = html.find_all(href = True)
-        href_tags = list(href_tags)
-        hrefs = [tag.get('href') for tag in href_tags]
-        return hrefs
+        return [tag.get('href') for tag in href_tags]
 
     # Baseball reference specific functions
     def get_player_background_data(self, league_year_id):
@@ -81,9 +77,8 @@ class scrape_baseball_reference():
 
   # Cleaning (had to index the list to concat b/c first parsed year is empty for some reason)
     def concat(self, list_of_parsed_league_data):
-        mooshed_data_by_year = [pd.concat(year) for year in list_of_parsed_league_data[1:]]
-        self.mooshed_data = [pd.concat(year) for year in mooshed_data_by_year]
-        return self.mooshed_data
+        self.mooshed_data_by_year = [pd.concat(year) for year in list_of_parsed_league_data[1:]]
+        return self.mooshed_data_by_year
 
     def flip_nwds(self, year):
         naia = year[year["Lev"] == "NAIA"]
@@ -106,14 +101,3 @@ class scrape_baseball_reference():
             year.to_sql(name = table_name + x, con = conn)
             x += 1
             table_name += str(x)
-#%% """ EXAMPLE """
-nwl_yearid_dict = {2021:'f5c87b08',2020:'78f2935d',
-                   2019:'817f5f93',2018:'6a2b88b5',
-                   2017:'c290e2ac',2016:'b33681e2',2015:'1671dc07'}
-
-Northwoods_league = scrape_baseball_reference()
-Northwoods_league_Data = Northwoods_league.get_league_player_background_history(nwl_yearid_dict)
-
-#%% Cleaning 
-print(Northwoods_league.check(Northwoods_league_Data))
-Northwoods_league_Data = Northwoods_league.concat(Northwoods_league_Data)
