@@ -11,12 +11,7 @@ import sqlite3
 class scrape_baseball_reference():
 
     def __init__(self):
-        print("SCRAPING OPTIONS:")
-        print(" - Pass a dictionary of League year id's to get_league_player_background_history()")
-        print(" - Pass a URL to find_data(url) to get any specific players baseline statistics")
-        print(" - Pass your list of parsed data to check() the total number of years and players you scraped")
-        print(" - Clean your data with the concat and flip functions")
-        print(" - Export data to local sqlite3 database with moce_to_sql() or move_all_to_sql()")
+        print(" --- Scrape the Baseball Reference Register ---")
 
     # General scraping functions
     def find_first_table_data(self, url):
@@ -90,14 +85,15 @@ class scrape_baseball_reference():
         self.flipped_data = [self.flip_nwds(year) for year in list_of_parsed_data]
         return self.flipped_data
 
+    # sqlite functions
     def move_to_sql(self, df, data_base_name, table_name):
         conn = sqlite3.connect(data_base_name + ".db")
-        df.to_sql(name = table_name, con = conn)
+        return df.to_sql(name = table_name, con = conn)
 
     def move_all_to_sql(self, list_of_dfs, data_base_name, table_name):
         conn = sqlite3.connect(data_base_name + ".db")
-        x = 0
+        _id = 0
         for year in list_of_dfs:
-            year.to_sql(name = table_name + x, con = conn)
-            x += 1
-            table_name += str(x)
+            year.to_sql(name = table_name + _id, con = conn)
+            _id += 1
+            table_name += str(_id)
