@@ -8,6 +8,9 @@ import sqlite3
 
 #%% """ Class """
 
+""" Baseball Reference Crawler Class Object """
+# All of the cleaning functions are currently northwoods league specific...
+# Will change this later. Example use case for Northwoods League at bottom.
 class scrape_baseball_reference():
 
     def __init__(self):
@@ -61,7 +64,7 @@ class scrape_baseball_reference():
         print("\n--- Parsing Player Background Data by Year ---")
         self.lg_background_players = [self.get_player_background_data(year) for year in dictionary_of_year_ids.values()]
         return self.lg_background_players
-
+        
     # Use this function to make sure we crawled all the right data
     def check(self, list_of_league_data):
         players = 0
@@ -71,29 +74,45 @@ class scrape_baseball_reference():
             print(f'Total number of scraped players: {players}')
 
   # Cleaning (had to index the list to concat b/c first parsed year is empty for some reason)
-    def concat(self, list_of_parsed_league_data):
-        self.mooshed_data_by_year = [pd.concat(year) for year in list_of_parsed_league_data[1:]]
-        return self.mooshed_data_by_year
-
-    def flip_nwds(self, year):
-        naia = year[year["Lev"] == "NAIA"]
-        ncaa = year[year["Lev"] == "NCAA"]
-        nwds = year[year["Lev"] == "Smr"]
-        return naia, ncaa, nwds
+  # All of these cleaning functions are currently specific to the Northwoods League Data.
+    def flip_my_data(self, list_of_parsed_league_data):
+        mooshed_data_by_year = [pd.concat(year) for year in list_of_parsed_league_data[1:]]
+        flat_list = []
+        for year in mooshed_data_by_year:
+            flat_list.append(year)
+        self.all_data = pd.concat(flat_list)
+        return self.flip(self.all_data)
     
-    def flip_northwoods(self, list_of_parsed_data):
-        self.flipped_data = [self.flip_nwds(year) for year in list_of_parsed_data]
-        return self.flipped_data
+    def flip(self, df):
+        ncaa = df[df["Lev"] == "NCAA"]
+        naia = df[df["Lev"] == "NAIA"]
+        nwds = df[df["Lg"] == "NWDS"]
+        college = pd.concat([ncaa, naia], ignore_index = True)
+        flipped = pd.merge(left = college, right = nwds, on = ["Year", "ID"])
+        return flipped
 
     # sqlite functions
     def move_to_sql(self, df, data_base_name, table_name):
         conn = sqlite3.connect(data_base_name + ".db")
-        return df.to_sql(name = table_name, con = conn)
+        return df.to_sql(name = table_name, con = conn), conn
+    
+    def start_sql(self, db):
+        self.conn = sqlite3.connect(database= db)
+        self.cur = self.conn.cursor()
+        return self.conn, self.cur
 
-    def move_all_to_sql(self, list_of_dfs, data_base_name, table_name):
-        conn = sqlite3.connect(data_base_name + ".db")
-        _id = 0
-        for year in list_of_dfs:
-            year.to_sql(name = table_name + _id, con = conn)
-            _id += 1
-            table_name += str(_id)
+#%% """ EXAMPLE """
+nwl_yearid_dict = {2021:'f5c87b08',2020:'78f2935d',
+                   2019:'817f5f93',2018:'6a2b88b5',
+                   2017:'c290e2ac',2016:'b33681e2',2015:'1671dc07'}
+
+Northwoods_league = scrape_baseball_reference()
+Northwoods_league_Data = Northwoods_league.get_league_player_background_history(nwl_yearid_dict)
+
+#%% Cleaning & Move to SQLite db
+""" Concatenating each year """
+Northwoods_league_Data = Northwoods_league.flip_my_data(Northwoods_league_Data)
+
+""" Move it to SQL so we don't have to keep running the scraper """
+Northwoods_league.move_to_sql(Northwoods_league_Data, "Northwoods", "ALL_NWDS_TABLE")
+conn, cur = Northwoods_league.start_sql("Northwoosd.db")
