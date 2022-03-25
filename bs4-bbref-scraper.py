@@ -10,7 +10,7 @@ import sqlite3
 
 """ Baseball Reference Crawler Class Object """
 # All of the cleaning functions are currently northwoods league specific...
-# Will change this later. Example use case for Northwoods League at bottom.
+# Will change this later
 class scrape_baseball_reference():
 
     def __init__(self):
@@ -94,25 +94,9 @@ class scrape_baseball_reference():
     # sqlite functions
     def move_to_sql(self, df, data_base_name, table_name):
         conn = sqlite3.connect(data_base_name + ".db")
-        return df.to_sql(name = table_name, con = conn), conn
+        return df.to_sql(name = table_name, con = conn, if_exists = "replace"), conn
     
     def start_sql(self, db):
-        self.conn = sqlite3.connect(database= db)
+        self.conn = sqlite3.connect(database= db, if_exists)
         self.cur = self.conn.cursor()
         return self.conn, self.cur
-
-#%% """ EXAMPLE """
-nwl_yearid_dict = {2021:'f5c87b08',2020:'78f2935d',
-                   2019:'817f5f93',2018:'6a2b88b5',
-                   2017:'c290e2ac',2016:'b33681e2',2015:'1671dc07'}
-
-Northwoods_league = scrape_baseball_reference()
-Northwoods_league_Data = Northwoods_league.get_league_player_background_history(nwl_yearid_dict)
-
-#%% Cleaning & Move to SQLite db
-""" Concatenating each year """
-Northwoods_league_Data = Northwoods_league.flip_my_data(Northwoods_league_Data)
-
-""" Move it to SQL so we don't have to keep running the scraper """
-Northwoods_league.move_to_sql(Northwoods_league_Data, "Northwoods", "ALL_NWDS_TABLE")
-conn, cur = Northwoods_league.start_sql("Northwoosd.db")
