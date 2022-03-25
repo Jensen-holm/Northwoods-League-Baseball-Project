@@ -9,8 +9,7 @@ import sqlite3
 #%% """ Class """
 
 """ Baseball Reference Crawler Class Object """
-# All of the cleaning functions are currently northwoods league specific...
-# Will change this later
+
 class scrape_baseball_reference():
 
     def __init__(self):
@@ -61,7 +60,7 @@ class scrape_baseball_reference():
         return player_data
 
     def get_league_player_background_history(self, dictionary_of_year_ids):
-        print("\n--- Parsing Player Background Data by Year ---")
+        print("\n --- Parsing Player Background Data by Year ---")
         self.lg_background_players = [self.get_player_background_data(year) for year in dictionary_of_year_ids.values()]
         return self.lg_background_players
         
@@ -91,12 +90,12 @@ class scrape_baseball_reference():
         flipped = pd.merge(left = college, right = nwds, on = ["Year", "ID"])
         return flipped
 
-    # sqlite functions
+    # sqlite function(s)
     def move_to_sql(self, df, data_base_name, table_name):
-        conn = sqlite3.connect(data_base_name + ".db")
-        return df.to_sql(name = table_name, con = conn, if_exists = "replace")
-    
-    def start_sql(self, db):
-        self.conn = sqlite3.connect(database= db)
+        print(f" --- Moved Data To Local sqlite3 Database ({data_base_name}, {table_name}) ---")
+        self.conn = sqlite3.connect(data_base_name + ".db")
         self.cur = self.conn.cursor()
-        return self.conn, self.cur
+        return df.to_sql(name = table_name, con = self.conn, if_exists = "replace")
+    
+    def end_sql(self):
+        return self.conn.close()
