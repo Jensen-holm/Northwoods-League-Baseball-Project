@@ -1,21 +1,10 @@
-#%% """ BS4 Baseball Reference Crawler py """
-""" Libraries """
-from bs4 import BeautifulSoup
-from tqdm import tqdm
-import pandas as pd
-import requests
-import sqlite3
-
-#%% """ Class """
-
 """ Baseball Reference Crawler Class Object """
 
-class scrape_baseball_reference():
+class bbref_register():
 
     def __init__(self):
         print(" --- Scrape the Baseball Reference Register ---")
 
-    # General scraping functions
     def find_first_table_data(self, url):
         return pd.read_html(url)[0]
 
@@ -63,32 +52,26 @@ class scrape_baseball_reference():
         print("\n --- Parsing Player Background Data by Year ---")
         self.lg_background_players = [self.get_player_background_data(year) for year in dictionary_of_year_ids.values()]
         return self.lg_background_players
-        
-    # Use this function to make sure we crawled all the right data
-    def check(self, list_of_league_data):
-        players = 0
-        for year in list_of_league_data:
-            players += len(year)
-            print(f'Number of years scraped: {len(list_of_league_data)}')
-            print(f'Total number of scraped players: {players}')
 
-  # Cleaning (had to index the list to concat b/c first parsed year is empty for some reason)
-  # All of these cleaning functions are currently specific to the Northwoods League Data.
+    def get_league_history(self, league_home_page_url):
+        print(" --- COLLECTING BATTING DATA HISTORY FOR ALL TEAMS IN LEAGUE HISTORY ---")
+        hrefs = self.find_links(league_home_page_url)
+        team_links = []
+        for link in hrefs:
+            if "/register/team.cgi?id=" in link:
+                team_links.append("https://baseball-reference.com" + link)
+        team_bat_data = []
+        for team in tqdm(team_links):
+            team_bat_data.append(self.find_first_table_data(team))
+        return team_bat_data
+
     def flip_my_data(self, list_of_parsed_league_data):
-        mooshed_data_by_year = [pd.concat(year) for year in list_of_parsed_league_data[1:]]
+        mooshed_data_by_year = [pd.concat(year) for year in list_of_parsed_league_data]
         flat_list = []
         for year in mooshed_data_by_year:
             flat_list.append(year)
         self.all_data = pd.concat(flat_list)
         return self.flip(self.all_data)
-    
-    def flip(self, df):
-        ncaa = df[df["Lev"] == "NCAA"]
-        naia = df[df["Lev"] == "NAIA"]
-        nwds = df[df["Lg"] == "NWDS"]
-        college = pd.concat([ncaa, naia], ignore_index = True)
-        flipped = pd.merge(left = college, right = nwds, on = ["Year", "ID"])
-        return flipped
 
     # sqlite function(s)
     def move_to_sql(self, df, data_base_name, table_name):
