@@ -5,8 +5,9 @@ class bbref_register():
     def __init__(self):
         print(" --- Scrape the Baseball Reference Register ---")
 
+    # This only gets me the first table from each page (only team_batting from team_page)
     def find_first_table_data(self, url):
-        return pd.read_html(url)[0]
+        return pd.read_html(url)
 
     def sewp(self, url):
         webpage = requests.get(url)
@@ -45,7 +46,7 @@ class bbref_register():
         id_num = 0
         for player in player_data:
             player["ID"] = id_num 
-            id_num += 1
+            id_num += 1       
         return player_data
 
     def get_league_player_background_history(self, dictionary_of_year_ids):
@@ -53,17 +54,24 @@ class bbref_register():
         self.lg_background_players = [self.get_player_background_data(year) for year in dictionary_of_year_ids.values()]
         return self.lg_background_players
 
-    def get_league_history(self, league_home_page_url):
-        print(" --- COLLECTING BATTING DATA HISTORY FOR ALL TEAMS IN LEAGUE HISTORY ---")
-        hrefs = self.find_links(league_home_page_url)
+
+    """ Replacing the get_league_player_background_history function with an easier one to work with """
+    """ Not sure if it works yet"""
+    def get_all_league_history(self, league_homepage_link_identifier):
+        print(" --- Getting all league and player history ---")
+        def_url = "https://baseball-reference.com"
+        links_to_search_through = self.find_links(def_url + "/register/league.cgi")
+        the_league = []
+        for link in links_to_search_through:
+            if league_homepage_link_identifier in link:
+                the_league.append(def_url + link)
+        links_from_league_page = [self.find_links(link) for link in the_league] 
         team_links = []
-        for link in hrefs:
+        for link in links_from_league_page:
             if "/register/team.cgi?id=" in link:
-                team_links.append("https://baseball-reference.com" + link)
-        team_bat_data = []
-        for team in tqdm(team_links):
-            team_bat_data.append(self.find_first_table_data(team))
-        return team_bat_data
+                team_links.append(def_url + link)
+        return [self.find_first_table_data(team) for team in team_links]
+
 
     def flip_my_data(self, list_of_parsed_league_data):
         mooshed_data_by_year = [pd.concat(year) for year in list_of_parsed_league_data]
@@ -71,6 +79,9 @@ class bbref_register():
         for year in mooshed_data_by_year:
             flat_list.append(year)
         self.all_data = pd.concat(flat_list)
+        # Make numeric
+        bat = self.all_data.apply(pd.to_numeric, errors='coerce').combine_first(self.all_data)
+        pit = self.all_data.apply(pd.to_numeric, errors='coerce').combine_first(self.all_data)
         return self.flip(self.all_data)
 
     # sqlite function(s)
