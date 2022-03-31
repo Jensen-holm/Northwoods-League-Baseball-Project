@@ -25,4 +25,8 @@ each row in the data has a players college stats, and a players northwoods stats
 and build the model, since that is what I would like to base it off of. 
 
 ## Modeling
+
 (Currently working on this part)
+
+## Conclusions
+
