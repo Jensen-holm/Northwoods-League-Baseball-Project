@@ -42,8 +42,13 @@ class bbref_register():
         player_data = []
         for link in tqdm(player_links):
             player_data.append(self.find_first_table_data('https://www.baseball-reference.com' + link))
+        # Add id_number for each player since we didn't scrape names
+        id_num = 0
+        for player in player_data:
+            player["ID"] = id_num 
+            id_num += 1       
         return player_data
-
+    
     def get_league_player_background_history(self, list_of_year_ids):
         print("\n --- Parsing Player Background Data by Year ---")
         self.lg_background_players = [self.get_player_background_data(year) for year in list_of_year_ids]
@@ -59,12 +64,9 @@ class bbref_register():
             self.all_data = self.all_data.apply(pd.to_numeric, errors='coerce').combine_first(self.all_data)
             return self.flip(self.all_data)
 
-        # sqlite function(s)
+        # sqlite function
         def move_to_sql(self, df, data_base_name, table_name):
             print(f" --- Moved Data To Local sqlite3 Database ({data_base_name}, {table_name}) ---")
             self.conn = sqlite3.connect(data_base_name + ".db")
             self.cur = self.conn.cursor()
             return df.to_sql(name = table_name, con = self.conn, if_exists = "replace")
-
-        def end_sql(self):
-            return self.conn.close()
