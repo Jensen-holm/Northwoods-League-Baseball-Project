@@ -1,4 +1,4 @@
-# Northwoods-League-Baseball-Project
+# Northwoods League Baseball Project
 
 End goal: Build a model to predict performance in the Northwoods League
 
