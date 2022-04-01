@@ -1,3 +1,9 @@
+from bs4 import BeautifulSoup
+from tqdm import tqdm
+import pandas as pd
+import sqlite3
+import sqlite3
+
 """ Baseball Reference Crawler Class Object """
 
 class bbref_register():
