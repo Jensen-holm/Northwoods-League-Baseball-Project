@@ -30,5 +30,7 @@ During my intial exploration of the scraped data, I was unable to fit a multiple
 league statistic based on colligate statistics. The model that has had the best fit with a 80% - 20% train test split has been a decision tree regressor, which I have
 decided to roll with as my final model since it is able to fit the testing data with a considerably lower mean squared error compared to that of the other model types.
 
+The next step in the modeling process is to estimate how many runs a player will score based on their projected total bases. In other words, I calculated the run value of total bases in the Northwoods League from 2014-2019. I did not want to include years earlier than 2014 simply because I feel that 5 years of data was sufficient, and the run environments change a lot year to year so I wanted as much data that I collect to be as recent as possible. 
+
 ## Conclusions
 
