@@ -58,7 +58,7 @@ from sklearn.metrics import mean_squared_error as mse
 
 x = dummies[[col for col in dummies.columns if "x" in col or "Tm" in col or "Lev" in col]]
 y = dummies["TB_y"]
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size= .3, train_size= .7, random_state= 1)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size= .2, train_size= .8, random_state= 1)
 dt = DecisionTreeRegressor(max_depth= 30, random_state= 1, min_samples_split = 10)
 dt.fit(x_train, y_train)
 y_pred = dt.predict(x_test)
