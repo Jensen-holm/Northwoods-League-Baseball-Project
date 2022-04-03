@@ -27,8 +27,8 @@ and build the model, since that is what I would like to base it off of.
 ## Modeling
 (Currently working on this part)
 During my intial exploration of the scraped data, I was unable to fit a multiple or simple linear regression model that could accuratley predict virtually any summer
-league statistic based on colligate statistics. So I decided to go with a Decision Tree regressor, to see if I could get a good fit with all of the colligate
-variables, and with a 70%, 30% train test split. 
+league statistic based on colligate statistics. The model that has had the best fit with a 70% - 30% train test split has been a decision tree regressor, which I have
+decided to roll with as my final model since it is able to fit the testing data with a considerably lower mean squared error compared to that of the other model types.
 
 ## Conclusions
 
