@@ -24,13 +24,18 @@ and merging everything into one giant dataframe, I moved it into a local sqlite3
 each row in the data has a players college stats, and a players northwoods stats for that upcoming season. This makes it easier to make data visualizations
 and build the model, since that is what I would like to base it off of. 
 
-## Modeling
+## Modeling Offense
 (Currently working on this part)
 During my intial exploration of the scraped data, I was unable to fit a multiple or simple linear regression model that could accuratley predict virtually any summer
 league statistic based on colligate statistics. The model that has had the best fit with a 80% - 20% train test split has been a decision tree regressor, which I have
 decided to roll with as my final model since it is able to fit the testing data with a considerably lower mean squared error compared to that of the other model types.
 
-The next step in the modeling process is to estimate how many runs a player will score based on their projected total bases. In other words, I calculated the run value of total bases in the Northwoods League from 2014-2019. I did not want to include years earlier than 2014 simply because I feel that 5 years of data was sufficient, and the run environments change a lot year to year so I wanted as much data that I collect to be as recent as possible. 
+## Modeling Pitching / defense
+(Next)
+
+## Application
+
+Now that I built a solid model for hitting, I can calculate the value of a total base in runs. And convert each players predicted total bases into a run value. Once I have done the same for pitching and runs allowed I can use the pythagorean wins and losses formula to get an estimated record for each team in the Northwoods League. 
 
 ## Conclusions
 
