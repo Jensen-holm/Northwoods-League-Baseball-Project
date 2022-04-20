@@ -26,28 +26,19 @@ class bbref_register():
 
     # Baseball reference specific functions
     def get_player_background_data(self, league_year_id):
-        league_links = self.find_links('https://www.baseball-reference.com/register/league.cgi?id=' + league_year_id)
-        # Find team links
-        team_links = []
-        for href in league_links:
-            if '/register/team.cgi?' in href:
-                team_links.append(href)
-        # scrape the team links for the player links
-        links_from_team = []
-        for href in team_links:
-            links_from_team.append(self.find_links('https://www.baseball-reference.com' + href))
-        # Append relevant links to list
-        player_links = []
-        for href in links_from_team:
-            for link in href:
-                if '/register/player.fcgi?id=' in link:
-                    player_links.append(link)
-        # Get rid of duplicates
-        player_links = list(set(player_links))
-        # finish by Returning the player data to a list
-        player_data = []
-        for link in tqdm(player_links):
-            player_data.append(self.find_first_table_data('https://www.baseball-reference.com' + link))
+        def get_player_background_data(self, league_year_id):
+        def_url = "https://baseball-refernece.com"
+        league_links = self.find_links(def_url + "/register/league.cgi?id=" + league_year_id)
+        team_links = [link for link in league_links if "/register/team.cgi?" in link]
+        links_from_team = [self.find_links(def_url + link) for link in team_links]
+        player_links = list(set([link for link in links_from_team if "/register/player.fcgi?" in link]))
+        player_data = [self.find_first_table_data(def_url + link) for link in tqdm(player_links)]
+        # add unique id numbers for each player since we didnt scrape names
+        id_num = 0
+        for player in player_data:
+            player["ID"] = id_num 
+            id_num += 1
+        return player_data
         # Add id_number for each player since we didn't scrape names
         id_num = 0
         for player in player_data:
