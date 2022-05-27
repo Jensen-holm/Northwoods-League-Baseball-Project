@@ -3,14 +3,15 @@
 # plan is to model a players performance in real time, compare that with the pitcher
 # then based on that output, create a distribution of probabilities based on the final number
 # randomly select from said poisson distribution
-
-# demonstrate modeling a player
 import model
 from sim import league
-import numpy as np
 import pandas as pd
 import math
+import requests
+from bs4 import BeautifulSoup
+from tqdm import tqdm
 
+""" Modeling """
 # import the data (no arguments means it will only be northwoods league data)
 df1 = league(nwds_filter = False, lg_name = "Summer Ball").data
 df1['RC_x'] = ((df1['H_x'] + df1['BB_x']) * df1['TB_x']) / df1['AB_x'] + df1['BB_x']
@@ -43,24 +44,26 @@ stdrc = _269rc.std
 mupa = _269pa.mean
 stdpa = _269pa.std
 
-""" Then make a model for pitchers """
+# now model pitching
+pit_df = league(nwds_filter = False, lg_name='summer ball').data
 
+""" Project rosters """
+# utilize the uniformity of baseball reference
+# maybe we can project the entore league in one function. (once bbref rosters update)
 
-class prob_bat():
+class prob_team():
 
-	def __init__(self, player_number, team_url, sidearm = True, name = ''):
-		self.name = name
+	def __init__(self, team_bbref_url, tm_name = ''):
+		self.team = tm_name
+		self.hitter_tbl, self.pitcher_tbl = self.plyr_data(team_bbref_url)
+		self.hitters = ''
+		self.pitchers= ''
+		self.hit_projections = [self.pred_hit(player) for player in self.players]
+		self.pit_projectiosn = []
 
-		if sidearm == False:
-			print('sidearm should be true until we work on this part.')
-
-		elif sidearm == True:
-			self.pred = _269.predict(self.pred_sidearm(team_url))
-			self._range = [pred - (2*std), pred + (2*std)]
-
-	def pred_sidearm(self, team_url, player_number):
-		hit_tbl = pd.read_html(team_url)[0]
-		player = hit_tbl[hit_tbl['#'] == player_number]
+	def pred_hit(self, player_url):
+		hit_tbl = pd.read_html(player_url)[0]
+		player = hit_tbl[hit_tbl['#'] == self.player_number]
 		player['RC'] = (((player["H"] + player['BB']) * player['TB']) / player["AB"] + player['BB'])
 		player['PA'] = player['AB'] + player['BB'] + player['HBP'] + player['SF']
 		rc_prediction = _269rc.model.predict(player[['TB', 'OPS', 'AB', 'SO', 'RC']])
@@ -69,22 +72,21 @@ class prob_bat():
 		rc_range = [math.floor(rc_prediction - 2*stdrc), math.ceil(rc_prediction + 2*stdrc)]
 		pa_range = [math.floor(pa_prediction) - 2*stdpa, math.ceil(pa_prediction + 2*stdpa)]
 		r = [rc_range[0] / pa_prediction, rc_range[1] / pa_prediction]
-		return r
+		return r, pa_range
 
-def predict_metrics_sidearm(team_url, player_number):
-		hit_tbl = pd.read_html(team_url)[0]
-		player = hit_tbl[hit_tbl['#'] == player_number]
-		player['RC'] = (((player["H"] + player['BB']) * player['TB']) / player["AB"] + player['BB'])
-		player['PA'] = player['AB'] + player['BB'] + player['HBP'] + player['SF']
-		rc_prediction = _269rc.model.predict(player[['TB', 'OPS', 'AB', 'SO', 'RC']])
-		pa_prediction = _269pa.model.predict(player[['TB', 'OPS', 'PA', 'AB', 'HR']])
+	''' pitching model is pretty rough rn, might simulate against the pitchers real time numbers during the season '''
+	def pred_pit(self, player_url):
 
-		# this returns best and worst case scenario runs created over projected plate appearances in a list
-		rc_range = [math.floor(rc_prediction - 2*stdrc), math.ceil(rc_prediction + 2*stdrc)]
-		pa_range = [math.floor(pa_prediction) - 2*stdpa, math.ceil(pa_prediction + 2*stdpa)]
-		r = [rc_range[0] / pa_prediction, rc_range[1] / pa_prediction]
-		return r
+		return 
 
-schuman_pred = predict_metrics_sidearm('https://gvsulakers.com/sports/baseball/stats/2022', 11.0)
-print(schuman_pred)
-
+	def plyr_data(self, url, year):
+		prefix = 'https://baseball-reference.com'
+		html = BeautifulSoup(requests.get(url).text, features= 'lxml')
+		tags = html.find_all('a', href = True)
+		plyrs = [(prefix + tag['href']) for tag in tags if '/player.fcgi?id=' in tag['href']]
+		print('Parsing Player Tables...')
+		tbl = pd.concat([pd.read_html(player)[0] for player in tqdm(plyrs)])
+		yr = tbl[tbl['Year']== year]
+		pitchers = yr[yr['IP'] >= 0]
+		hitters = yr[yr['PA'] >= 0]
+		return hitters, pitchers
