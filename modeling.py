@@ -1,8 +1,9 @@
 # """
 # Why: predict summer league bsbl performance
-# specs: sklearn random forest regressor (originally tried tensorflow neural network)
+# specs: sklearn random forest regressor (originally tried tensorflow)
 # """
 
+from xml.etree.ElementInclude import include
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
@@ -17,7 +18,7 @@ sns.set()
 
 class rf_model():
 
-    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True, num_deviations = 2):
+    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True, num_deviations = 3):
 
         self.explanatory = explanatory
         self.response = response
@@ -108,20 +109,27 @@ class rf_model():
         # evaluate if the actual value is within each predicted range or not
         yes = 0
         no = 0
+
+        '''
+        try to use the mean and std of the predicted values instead of just 
+        the actual values to see if more will fall in the range that way.
+        '''
+
         for col in self.y_test.columns:
             for i in range(len(pred_df)):
                 if pred_df[col + ' min'].iloc[i] <= actual[col].iloc[i] <= pred_df[col + ' max'].iloc[i]:
                     yes += 1
-                elif pred_df[col + ' min'] > actual[col]:
+                elif pred_df[col + ' min'].iloc[i] > actual[col].iloc[i]:
                     no +=1
-                elif pred_df[col + ' max'] < actual[col]:
+                elif pred_df[col + ' max'].iloc[i] < actual[col].iloc[i]:
                     no += 1
 
+        ''' not sure how spot on this eval is at the moment '''
         if no != 0 and yes != 0:
-            print(f'{yes / no}% of the actual values fall within the predicted range.')
+            print(f'{yes / len(actual):.3f}% of the actual values fall within the predicted range.\n')
 
         elif no == 0:
-            print(f'100% of the actual values fall within the predicted range.')
+            print(f'100% of the actual values fall within the predicted range.\n')
 
         elif yes == 0:
             print(f'0% of the actual values fall within the predicted range.')
