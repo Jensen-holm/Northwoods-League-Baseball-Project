@@ -1,19 +1,14 @@
-# trying to define a normal outcome distribution curve for each player based on that players modeled numbers
-
-# plan is to model a players performance in real time, compare that with the pitcher
-# then based on that output, create a distribution of probabilities based on the final number
-# randomly select from said poisson distribution
-import sqlite3
 from modeling import rf_model
-# from sim import league
 import pandas as pd
-import math
-import requests
-from bs4 import BeautifulSoup
-from tqdm import tqdm
 import sqlite3
 
-''' Data '''
+''' 
+
+I only use this file now for the league object 
+so i can import the same data across multiple files
+and to reference the commented out code below
+
+'''
 
 class league():                                                   # the unclean one is all_smr
     def __init__(self, sqlite = True, dbase = "SMR.db", table = "all_smr_clean1", nwds_filter = True, game_log_csv = '', lg_name = ''):
