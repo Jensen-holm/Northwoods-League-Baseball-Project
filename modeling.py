@@ -87,48 +87,41 @@ class rf_model():
     def eval_range(self):
 
         pred = self.model.predict(self.x_test)
-        pred_df = pd.DataFrame(pred, columns = self.y_test.columns)
+        self.pred_df = pd.DataFrame(pred, columns = self.y_test.columns)
         print('\n---- Eval with range ----\n')
 
+        actual = self.y_test
+        self.pred_df.sort_index(axis = 1, inplace= True)
+        actual.sort_index(axis = 1, inplace = True)
+        self.pred_df.sort_index(inplace = True)
+        actual.sort_index(inplace = True)
+
+        self.ranges = []
         # for each column of predicted vals
         for col in self.y_test.columns:
             # create a range based on mu and std
             mu = self.y_test[col].mean()
             std = self.y_test[col].std()
-            actual = self.y_test
+            self.pred_df[col + ' min'] = self.pred_df[col] - (std * self.num_deviations)
+            self.pred_df[col + ' max'] = self.pred_df[col] + (std * self.num_deviations)
+            self.ranges.append([mu - (std * self.num_deviations), mu + (std * self.num_deviations), col])
 
-            pred_df[col + ' min'] = pred_df[col] - (std * self.num_deviations)
-            pred_df[col + ' max'] = pred_df[col] + (std * self.num_deviations)
-
-        # pred_df.sort_index(axis = 1, inplace= True)
-        # actual.sort_index(axis = 1, inplace = True)
-        # pred_df.sort_index(inplace = True)
-        # actual.sort_index(inplace = True)
-
-        # evaluate if the actual value is within each predicted range or not
-        ''' not sure if this is right yet '''
-        n = len(actual) * len(actual.columns)
-        
+        # evaluate if the actual value is within each predicted range or not        
         yes = 0
         no = 0
         off = 0
-
-        '''
-        try to use the mean and std of the predicted values instead of just 
-        the actual values to see if more will fall in the range that way.
-        '''
-
         for col in self.y_test.columns:
-            for i in range(len(pred_df)):
-                if pred_df[col + ' min'].iloc[i] <= actual[col].iloc[i] <= pred_df[col + ' max'].iloc[i]:
+            for i in range(len(self.pred_df)):
+                if self.pred_df[col + ' min'].iloc[i] <= actual[col].iloc[i] <= self.pred_df[col + ' max'].iloc[i]:
                     yes += 1
-                elif pred_df[col + ' min'].iloc[i] > actual[col].iloc[i]:
+                elif self.pred_df[col + ' min'].iloc[i] > actual[col].iloc[i]:
                     no +=1
-                    off += (pred_df[col + ' min'].iloc[i] - actual[col].iloc[i])
-                elif pred_df[col + ' max'].iloc[i] < actual[col].iloc[i]:
+                    off += (self.pred_df[col + ' min'].iloc[i] - actual[col].iloc[i])
+                elif self.pred_df[col + ' max'].iloc[i] < actual[col].iloc[i]:
                     no += 1
-                    off += (actual[col].iloc[i] - pred_df[col + ' max'].iloc[i])
+                    off += (actual[col].iloc[i] - self.pred_df[col + ' max'].iloc[i])
 
+        ''' evaluation branch '''
         if no != 0 and yes != 0:
             print(f'{(yes / (yes + no)) * 100:.3f}% of the actual values fall within the predicted range.\n')
 
@@ -141,5 +134,8 @@ class rf_model():
         if no != 0:
             print(f'Predicted values outside the range are off by an average absolute value of {off / no:.3f} units.\n')
 
-
-        self.pred_df = pred_df
+'''
+within simp.py is where we will
+estimate the ranges of each
+individial we want to project
+'''
