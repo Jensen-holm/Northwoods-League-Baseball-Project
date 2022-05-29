@@ -137,13 +137,21 @@ class tf_model():
 
 
 
-
-
 """ Random forest seems to get me better  results with nwds data """
 
 class rf_model():
 
-    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100):
+    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True):
+
+        # if normalize == True:
+        #     transformer1 = Normalizer().fit(explanatory)
+        #     transformer2 = Normalizer().fit(response)
+        #     explanatory = transformer1.transform(explanatory)
+        #     response = transformer2.transform(response)
+
+        # scale = StandardScaler()
+        # explanatory = scale.fit(explanatory)
+        # response = scale.fit(response)
 
         self.explanatory = explanatory
         self.response = response
@@ -155,7 +163,12 @@ class rf_model():
             self.x_train, self.x_test, self.y_train, self.y_test = self.dumb_split(explanatory, response)
 
         self.fit(self.x_train, self.y_train)
-        self.mean, self.std, self.pred = self.evaluate(self.x_test, self.y_test)
+
+        if pred_range == False:
+            self.mean, self.std, self.pred = self.evaluate(self.x_test, self.y_test)
+
+        elif pred_range == True:
+            self.mean, self.std, self.pred = self.eval_range(self.x_test, self.y_test)
 
         #select feature importances to model off of 
         importances = list(self.model.feature_importances_)
@@ -178,18 +191,18 @@ class rf_model():
         # print(f'Mean Squared Error \n')
 
         #plot
-        x = np.arange(min(pred), max(pred))
+        # x = np.arange(min(pred[2]), max(pred[2]))
 
-        plt.plot(x,x, color = 'red')
-        plt.scatter(y_test, pred, marker = '^', alpha = .3)
-        plt.xlabel('Actual')
-        plt.ylabel('Predicted')
-        plt.show()
+        # plt.plot(x,x, color = 'red')
+        # plt.scatter(y_test, pred, marker = '^', alpha = .3)
+        # plt.xlabel('Actual')
+        # plt.ylabel('Predicted')
+        # plt.show()
 
         # dist of pred values 
-        plt.hist(pred, bins = 50)
-        plt.title("Distribution of Predicted values on test data")
-        plt.show()
+        # plt.hist(pred, bins = 50)
+        # plt.title("Distribution of Predicted values on test data")
+        # plt.show()
 
         # get mean and std from predicted val distribution
         std = np.std(pred)
@@ -197,6 +210,8 @@ class rf_model():
 
         return mean, std, pred
 
-    def projection(self, metrics = []):
-        # use this to predict future performances if evaluate numbers are good enough
-        return self.model.predict(metrics) # add std twice so we can get 95% confidence interval and pull randomly from that
+    def eval_range(self, x_test, y_test):
+
+
+
+        return 
