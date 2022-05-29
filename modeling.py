@@ -1,6 +1,6 @@
 # """
 # Why: predict summer league bsbl performance
-# specs: sklearn random forest regressor (originally tried tensorflow)
+# specs: sklearn random forest regressor (originally tried tensorflow neural network)
 # """
 
 import pandas as pd
