@@ -18,8 +18,8 @@ sns.set()
 
 class rf_model():
 
-    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True, num_deviations = 3):
-
+    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True, num_deviations = 2):
+        self.num_deviations = num_deviations
         self.explanatory = explanatory
         self.response = response
         self.model = RandomForestRegressor(n_estimators = n_estimators, random_state = 42)
@@ -36,7 +36,7 @@ class rf_model():
         self.evaluate()
 
         if pred_range == True:
-            self.eval_range(num_deviations = num_deviations)
+            self.eval_range()
 
     def dumb_split(self, explanatory, response):
         explanatory = pd.get_dummies(explanatory)
@@ -85,7 +85,7 @@ class rf_model():
 
         return mean, std, pred
 
-    def eval_range(self, num_deviations = 2):
+    def eval_range(self):
 
         pred = self.model.predict(self.x_test)
         pred_df = pd.DataFrame(pred, columns = self.y_test.columns)
@@ -98,8 +98,8 @@ class rf_model():
             std = self.y_test[col].std()
             actual = self.y_test
 
-            pred_df[col + ' min'] = pred_df[col] - (std * num_deviations)
-            pred_df[col + ' max'] = pred_df[col] + (std * num_deviations)
+            pred_df[col + ' min'] = pred_df[col] - (std * self.num_deviations)
+            pred_df[col + ' max'] = pred_df[col] + (std * self.num_deviations)
 
         # pred_df.sort_index(axis = 1, inplace= True)
         # actual.sort_index(axis = 1, inplace = True)
@@ -107,8 +107,12 @@ class rf_model():
         # actual.sort_index(inplace = True)
 
         # evaluate if the actual value is within each predicted range or not
+        ''' not sure if this is right yet '''
+        n = len(actual) * len(actual.columns)
+        
         yes = 0
         no = 0
+        off = 0
 
         '''
         try to use the mean and std of the predicted values instead of just 
@@ -121,18 +125,22 @@ class rf_model():
                     yes += 1
                 elif pred_df[col + ' min'].iloc[i] > actual[col].iloc[i]:
                     no +=1
+                    off += (pred_df[col + ' min'].iloc[i] - actual[col].iloc[i])
                 elif pred_df[col + ' max'].iloc[i] < actual[col].iloc[i]:
                     no += 1
+                    off += (actual[col].iloc[i] - pred_df[col + ' max'].iloc[i])
 
-        ''' not sure how spot on this eval is at the moment '''
         if no != 0 and yes != 0:
-            print(f'{yes / len(actual):.3f}% of the actual values fall within the predicted range.\n')
+            print(f'{(yes / (yes + no)) * 100:.3f}% of the actual values fall within the predicted range.\n')
 
         elif no == 0:
             print(f'100% of the actual values fall within the predicted range.\n')
 
         elif yes == 0:
-            print(f'0% of the actual values fall within the predicted range.')
+            print(f'0% of the actual values fall within the predicted range.\n')
+
+        if no != 0:
+            print(f'Predicted values outside the range are off by an average absolute value of {off / no:.3f} units.\n')
 
 
         self.pred_df = pred_df
