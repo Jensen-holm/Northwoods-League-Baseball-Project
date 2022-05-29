@@ -1,178 +1,42 @@
-#%%
-"""
-What: tensorflow Sequential model
-Why: predict summer league bsbl performance
-specs: tensorflow keras sequential regression model
-"""
+# """
+# Why: predict summer league bsbl performance
+# specs: sklearn random forest regressor (originally tried tensorflow)
+# """
 
+from xml.etree.ElementInclude import include
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler
-# from sklearn.preprocessing import Normalizer
-from tensorflow.keras.models import Sequential
-from tensorflow.keras import layers
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import r2_score
-import seaborn as sns  
+import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
-import matplotlib.pyplot as plt 
-import numpy as np 
+from sklearn.metrics import mean_absolute_error
+import matplotlib.pyplot as plt
+import numpy as np
 sns.set()
-
-"""
-
-in the process of training and testing these settings 
-
-"""
-
-class tf_model():
-
-    def __init__(self, name, dataset, explanatory, response, split = .3, standardize = True):
-        self.name = name
-        self.split = split # 70-30 train_test_split
-        self.standardize = standardize
-        self.model = self.build(dataset, explanatory, response)
-
-        # standardize fit branch
-        if self.standardize == True:
-            self.Fit(self.features_train_scaled, self.labels_train_scaled)
-            self.Eval(self.model, self.features_test_scaled, self.labels_test_scaled)
-        elif self.standardize == False:
-            self.Fit(self.features_train, self.labels_train)
-            self.Eval(self.model, self.features_test, self.labels_test)
-
-    def build(self, dataset, explanatory, response, dummies = True, dropout_ = .3):
-
-        # create instance of sequential model
-        my_model = Sequential(name = self.name)
-        df = dataset
-        # to dummy or not to dummy
-        if dummies == True:
-            df = pd.get_dummies(pd.DataFrame(dataset))
-        elif dummies == False:
-            df = pd.DataFrame(dataset)
-
-        # train_test_split
-        # can only be one response in sequential models
-        self.features_train, self.features_test, self.labels_train, self.labels_test = train_test_split(explanatory, response, test_size = self.split, random_state = 42)
-
-        # to standardize or not to standardize
-        if self.standardize == True:
-
-            # standardization and the column transformer
-            numeric_features = explanatory.select_dtypes(include = ['float64','int64'])
-            numeric_columns = numeric_features.columns
-
-            ct = ColumnTransformer([('only numeric',StandardScaler(), numeric_columns)], remainder = 'passthrough')
-
-            # ct for the lables
-            # since there is only one column
-            self.labels_train_scaled = (self.labels_train - self.labels_train.mean())/self.labels_train.std() 
-            self.labels_test_scaled = (self.labels_test - self.labels_train.mean()) / self.labels_train.std()
-
-            self.features_train_scaled = ct.fit_transform(self.features_train)
-            self.features_test_scaled = ct.fit_transform(self.features_test)
-
-            # # I do not know if we will even need this block
-            # self.labels_train_scaled = ctlabels.fit_transform(self.labels_train)
-            # self.labels_test_scaled = ctlabels.fit_transform(self.labels_test)
-
-            my_model.add(layers.InputLayer(input_shape = (self.features_train_scaled.shape[1])))
-            # adding hidden layers
-            my_model.add(layers.Dense(32, activation = 'relu'))
-            #my_model.add(layers.Dropout(dropout_))
-            # output layer
-            my_model.add(layers.Dense(1))
-            # optimiser
-            opt = Adam(learning_rate = 0.01)
-            my_model.compile(loss = 'mse', metrics = ['mae'], optimizer = opt)
-            self.es = EarlyStopping(monitor='val_loss', mode='min', verbose=0, patience = 20)
-            print(my_model.summary())
-            return my_model
-
-        elif self.standardize == False:
-
-            # same thing but without standardization and the column transformer
-            my_model.add(layers.InputLayer(input_shape = (self.features_train.shape[1])))
-            # adding hidden layers
-            my_model.add(layers.Dense(32, activation = 'relu'))
-            #my_model.add(layers.Dropout(dropout_))
-            # output layer
-            my_model.add(layers.Dense(1))
-            # optimiser
-            opt = Adam(learning_rate = 0.01)
-            my_model.compile(loss = 'mse', metrics = ['mae'], optimizer = opt)
-            self.es = EarlyStopping(monitor = 'val_loss', mode = 'min', verbose = 0, patience = 20)
-            print(my_model.summary())
-            return my_model
-
-        elif self.standardize != False:
-            return f"standardize should be a Boolean Value, not {self.standardize}."
-
-    # fit to training data
-    def Fit(self, features_train, labels_train, num_epochs = 5, batch_size = 1):
-        return self.model.fit(features_train, labels_train, epochs=num_epochs, batch_size= batch_size, verbose=1, validation_split = 0.2) #callbacks = [self.es])
-
-    # evaluate on the test data
-    def Eval(self, model, features_test, labels_test):
-        val_mse, val_mae = self.model.evaluate(features_test, labels_test, verbose = 0)
-        y_true = labels_test
-        pred = model.predict(features_test)
-        r2 = r2_score(labels_test, pred)
-        plt.scatter(pred, labels_test, marker = '^', alpha = .2)
-        plt.xlabel('Predicted Value')
-        plt.ylabel('Actual Value')
-        x = np.arange(max(pred))
-        plt.plot(x,x, color = 'red')
-        plt.show()
-
-        # distribution of predicted values
-        plt.hist(pred, bins = 50)
-
-        print(f"\n --- RESULTS ---\nR Squared: {r2}\nMAE: {val_mae}\nMSE: {val_mse}")
-
-
-
-
 
 """ Random forest seems to get me better  results with nwds data """
 
 class rf_model():
 
-    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True):
-
-        # if normalize == True:
-        #     transformer1 = Normalizer().fit(explanatory)
-        #     transformer2 = Normalizer().fit(response)
-        #     explanatory = transformer1.transform(explanatory)
-        #     response = transformer2.transform(response)
-
-        # scale = StandardScaler()
-        # explanatory = scale.fit(explanatory)
-        # response = scale.fit(response)
+    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True, num_deviations = 2):
 
         self.explanatory = explanatory
         self.response = response
         self.model = RandomForestRegressor(n_estimators = n_estimators, random_state = 42)
 
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(explanatory, response, test_size = .3, random_state = 42)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(explanatory, response, test_size = test_size, random_state = 42)
 
         if dummies == True:
             self.x_train, self.x_test, self.y_train, self.y_test = self.dumb_split(explanatory, response)
 
-        self.fit(self.x_train, self.y_train)
+        self.fit()
 
-        if pred_range == False:
-            self.mean, self.std, self.pred = self.evaluate(self.x_test, self.y_test)
+        self.importances()
 
-        elif pred_range == True:
-            self.mean, self.std, self.pred = self.eval_range(self.x_test, self.y_test)
+        self.evaluate()
 
-        #select feature importances to model off of 
-        importances = list(self.model.feature_importances_)
-        print(importances)
+        if pred_range == True:
+            self.eval_range(num_deviations = num_deviations)
 
     def dumb_split(self, explanatory, response):
         explanatory = pd.get_dummies(explanatory)
@@ -180,38 +44,88 @@ class rf_model():
         x_train, x_test, y_train, y_test = train_test_split(explanatory, response, test_size = .3, random_state = 42)
         return x_train, x_test, y_train, y_test
 
-    def fit(self,x_train, y_train):
-        return  self.model.fit(x_train, y_train)
+    def fit(self):
+        return  self.model.fit(self.x_train, self.y_train)
 
-    def evaluate(self, x_test, y_test):
+    def importances(self):
+        #select feature importances to model off of
+        importances = list(zip(list(self.model.feature_importances_), self.response.columns))
+        print('\n---- Importance of selected features ----\n')
+        for i in range(len(importances)):
+            print(f'{importances[i][1]} : {importances[i][0]:.3f}\n')
+
+    def evaluate(self, plot = False):
         # stats
-        pred = self.model.predict(x_test)
-        print(f'R Squared: {r2_score(y_test, pred)}\n')
-        # print(f'Mean Absolute Error: \n')
-        # print(f'Mean Squared Error \n')
+        pred = self.model.predict(self.x_test)
+        print(f'\n--- Eval without range ---\nR Squared: {r2_score(self.y_test, pred)}\n')
 
-        #plot
-        # x = np.arange(min(pred[2]), max(pred[2]))
+        # print the mae for each of the predictions
+        for col in self.response.columns:
+            pred1 = pd.DataFrame(pred, columns = self.response.columns)
+            print(f'Mean Absolute Error for {col}: {mean_absolute_error(self.y_test[col], pred1[col]):.3f} \n')
 
-        # plt.plot(x,x, color = 'red')
-        # plt.scatter(y_test, pred, marker = '^', alpha = .3)
-        # plt.xlabel('Actual')
-        # plt.ylabel('Predicted')
-        # plt.show()
 
-        # dist of pred values 
-        # plt.hist(pred, bins = 50)
-        # plt.title("Distribution of Predicted values on test data")
-        # plt.show()
+        if plot != False:
+            # x = np.arange(min(pred[2]), max(pred[2]))
 
-        # get mean and std from predicted val distribution
+            # plt.plot(x,x, color = 'red')
+            plt.scatter(self.y_test, pred, marker = '^', alpha = .3)
+            plt.xlabel('Actual')
+            plt.ylabel('Predicted')
+            plt.show()
+
+            # dist of pred values
+            plt.hist(pred, bins = 50)
+            plt.title("Distribution of Predicted values on test data")
+            plt.show()
+
+            # get mean and std from predicted val distribution
         std = np.std(pred)
         mean = np.mean(pred)
 
         return mean, std, pred
 
-    def eval_range(self, x_test, y_test):
+    def eval_range(self, num_deviations = 2):
+
+        pred = self.model.predict(self.x_test)
+        pred_df = pd.DataFrame(pred, columns = self.y_test.columns)
+        print('\n---- Eval with range ----\n')
+
+        # for each column of predicted vals
+        for col in self.y_test.columns:
+            # create a range based on mu and std
+            mu = self.y_test[col].mean()
+            std = self.y_test[col].std()
+            actual = self.y_test
+
+            pred_df[col + ' min'] = pred_df[col] - (std * num_deviations)
+            pred_df[col + ' max'] = pred_df[col] + (std * num_deviations)
+
+        # pred_df.sort_index(axis = 1, inplace= True)
+        # actual.sort_index(axis = 1, inplace = True)
+        # pred_df.sort_index(inplace = True)
+        # actual.sort_index(inplace = True)
+
+        # evaluate if the actual value is within each predicted range or not
+        yes = 0
+        no = 0
+        for col in self.y_test.columns:
+            for i in range(len(pred_df)):
+                if pred_df[col + ' min'].iloc[i] <= actual[col].iloc[i] <= pred_df[col + ' max'].iloc[i]:
+                    yes += 1
+                elif pred_df[col + ' min'] > actual[col]:
+                    no +=1
+                elif pred_df[col + ' max'] < actual[col]:
+                    no += 1
+
+        if no != 0 and yes != 0:
+            print(f'{yes / no}% of the actual values fall within the predicted range.')
+
+        elif no == 0:
+            print(f'100% of the actual values fall within the predicted range.')
+
+        elif yes == 0:
+            print(f'0% of the actual values fall within the predicted range.')
 
 
-
-        return 
+        self.pred_df = pred_df
