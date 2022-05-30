@@ -15,6 +15,8 @@ their name.
 
 ## Modeling
 
+files discussed: modeling.py & model.py
+
 Once I had all of that messy data, I filtered out the massive dataframe so that I was left with just the
 players colllege statistics, and their summer statistics. 
 
