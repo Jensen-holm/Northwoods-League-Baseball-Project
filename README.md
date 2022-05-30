@@ -6,9 +6,9 @@ pitching matchups, etc...
 
 ## Collecting Data
 
-the file titled BBREF_scraper.py is the code that I wrote to scrape data off of baseball reference.
+the file titled scraper.py is the code that I wrote to scrape data off of baseball reference.
 Once I finished it I would run it in my terminal for ease of use, it allowed me to browse Baseball
-Reference, find a league I want to get player data from, run the BBREF_scraper.py file and paste the 
+Reference, find a league I want to get player data from, run the craper.py file and paste the 
 encyclopedia URL for the league as well as what I want the csv file to be called and wallah, it gives 
 me the whole Baseball Reference history of each player that has ever played in said league along with 
 their name.
