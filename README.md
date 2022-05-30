@@ -1,4 +1,4 @@
-## Predictive Modeling & Simulation Analysis of Summer Baseball
+## Predictive Modeling & Simulation Analysis of Colligate and Summer Baseball
 
 Main goal: project a range of numbers for each player in the Northwoods League and simulate
 games between teams with said projected ranges. Hopefully will be able to find ideal lineups,
