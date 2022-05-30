@@ -46,7 +46,17 @@ each pitcher, which would allow me to incorperate detialed at bat results in the
 
 files discusses: sim.py & prob.py
 
+Now since I have prediction ranges for each player in multiple different metrics, I can use this to randomly select
+outcomes from within each players range assuming a poisson distribution (poisson distribution is one that assumes each event is 
+independent of the previous). There is a function that if I enter in the northwoods league URL once the live rosters are up,
+it will automatically project every player on each team as rosters change. This will allow me to simulate games between two lineups
+without having to manually change anything. I have plans to update the simulation with live summer season stats once there is a big enough
+of a sample size to project the rest of the season based on their first half of the season. I would then use those numbers in the
+simulation. 
 
+The value in the simulation I believe will come in simulating at least 100 games between two different teams,
+and being able to visualize what each team is good at, bad at, and ideal line ups. I can simulate 1000 games, trying
+out each possible lineup to a certain number of games to see the lineup that gives kalamazoo the best chace to win.
 
 
 ## Conclusion
