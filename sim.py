@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 from model import my_model
-from prob import prob_bat
 from tqdm import tqdm 
 import pandas as pd 
 import numpy as np
