@@ -17,7 +17,7 @@ sns.set()
 
 class rf_model():
 
-    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True, num_deviations = 2):
+    def __init__(self, explanatory, response, dummies = False, test_size = .3, n_estimators = 100, pred_range = True, num_deviations = 2, visualize = False):
         self.num_deviations = num_deviations
         self.explanatory = explanatory
         self.response = response
@@ -30,12 +30,13 @@ class rf_model():
 
         self.fit()
 
-        self.importances()
+        if visualize == True:
+            self.importances()
 
-        self.evaluate()
+            self.evaluate()
 
-        if pred_range == True:
-            self.eval_range()
+            if pred_range == True:
+                self.eval_range()
 
     def dumb_split(self, explanatory, response):
         explanatory = pd.get_dummies(explanatory)
@@ -100,11 +101,11 @@ class rf_model():
         # for each column of predicted vals
         for col in self.y_test.columns:
             # create a range based on mu and std
-            mu = self.y_test[col].mean()
-            std = self.y_test[col].std()
-            self.pred_df[col + ' min'] = self.pred_df[col] - (std * self.num_deviations)
-            self.pred_df[col + ' max'] = self.pred_df[col] + (std * self.num_deviations)
-            self.ranges.append([mu - (std * self.num_deviations), mu + (std * self.num_deviations), col])
+            self.mu = self.y_test[col].mean()
+            self.std = self.y_test[col].std()
+            self.pred_df[col + ' min'] = self.pred_df[col] - (self.std * self.num_deviations)
+            self.pred_df[col + ' max'] = self.pred_df[col] + (self.std * self.num_deviations)
+            self.ranges.append([self.mu - (self.std * self.num_deviations), self.mu + (self.std * self.num_deviations), col])
 
         # evaluate if the actual value is within each predicted range or not        
         yes = 0
@@ -138,4 +139,5 @@ class rf_model():
 within simp.py is where we will
 estimate the ranges of each
 individial we want to project
+'''
 '''
