@@ -15,46 +15,39 @@ class Player():
     def __init__(self, bbref_link):
         self.link = bbref_link
         self.tbl = self.sewp_stats()
-        ''' move projection function to the league object '''
+        self.pred_range = self.projections()
 
-    ''' 
-    once each player has a range of predicted values, we will need to 
-    randomly generate probabilities for each event over and over since we have
-    a range of probabilities instead of a set probability for each event because of the 
-    way that the model works. So, we will turn the projected numbers into probabilities that
-    add up to 1, then randomly assign those probabilities based on the models predicted range.
-    '''
+        ''' add predicted ranges to each player dataframe '''
+        for col in explanatory_cols:
+            self.tbl[col + ' min'] = self.pred_range[0]
+            self.tbl[col + ' max'] = self.pred_range[1]
+
+        '''
+        once each player has a range of predicted values, we will need to 
+        randomly generate probabilities for each event over and over since we have
+        a range of probabilities instead of a set probability for each event because of the 
+        way that the model works. So, we will turn the projected numbers into probabilities that
+        add up to 1, then randomly assign those probabilities based on the models predicted range.
+        '''
 
     def sewp_stats(self):
-        return pd.read_html(self.link)[0]
-        
-        
-class Team():
+        html = BeautifulSoup(requests.get(self.link).text, features = 'lxml')
+        spans = html.find_all('span')
+        p_tags = html.find_all('p')
+        df = pd.read_html(self.link)[0]
+        df['name'] = spans[8].text
+        df['pos'] = p_tags[0].text[13:].replace('  ', '').replace('\n', '').strip()
+        df['height'] = spans[9].text
+        df['weight'] = spans[10].text
+        df['b-day'] = spans[11].text
+        return df
 
-    def __init__(self, team_link):
-        self.team_link = team_link
-        self.player_links = self.get_plyr_links()
-        self.player_stats_list = self.scrape_player_nums()
-        spans = BeautifulSoup(requests.get(self.team_link).text, features = 'lxml').find_all('span')
-        self.year = spans[8].text
-        self.team_name = spans[9].text
-        
-        print(f'\n   Projecting Ranges for players on the {self.year} {self.team_name}\n')
-        self.pred_ranges = [self.projections(player.tbl) for player in tqdm(self.player_stats_list)]
-        
-
-    def get_plyr_links(self):
-        html = BeautifulSoup(requests.get(self.team_link).text, features = 'lxml')
-        a_tags = html.find_all('a', href = True)
-        return [('https://baseball-reference.com' + tag['href']) for tag in a_tags if '/player.fcgi?id=' in tag['href']]
-
-    def scrape_player_nums(self):
-        return [Player(guy) for guy in self.player_links]
-
-    def projections(self, df, num_deviations = 1):
+    def projections(self, num_deviations = 1):
         # filter the df so we project based on college numbers
-        ''' may need to change these filters later '''
         # clean it (not sure if this works rn)
+
+        ''' need to make this condusive to naia? '''
+        df = self.tbl
         df = df[df['Lev'] != 'Other']
         df = df[df['Lev'] == 'NCAA']
         df = df[df['Year'] == 2022]
@@ -75,20 +68,44 @@ class Team():
             # ''' export a csv containing predicted values before we turn the minto probabilities, if it already exists it will update '''
 
         elif len(df) < 1:
-            return None
+            return "No available Colligate Stats to Model off of."
+        
+class Team():
 
-class League():
+    def __init__(self, team_link):
+        self.team_link = team_link
+        self.player_links = self.get_plyr_links()
+        spans = BeautifulSoup(requests.get(self.team_link).text, features = 'lxml').find_all('span')
+        self.year = spans[8].text
+        self.team_name = spans[9].text
+        self.player_list = self.scrape_player_nums()
+
+        # now that we have this csv of predicted values, lets predict probabilities per PA
+        # somehow get it to add up to one
+        self.team_df = pd.concat([plyr.tbl for plyr in self.player_list])
+
+    def get_plyr_links(self):
+        html = BeautifulSoup(requests.get(self.team_link).text, features = 'lxml')
+        a_tags = html.find_all('a', href = True)
+        return [('https://baseball-reference.com' + tag['href']) for tag in a_tags if '/player.fcgi?id=' in tag['href']]
+
+    def scrape_player_nums(self):
+        print(f'\n                  Projecting Ranges for players on the {self.year} {self.team_name}\n')
+        return [Player(guy) for guy in tqdm(self.player_links)]
+
+class ProjectNewLeague():
 
     def __init__(self, lg_url = input('\nEnter League / Year URL (ignore for now): ')):
 
         spans = BeautifulSoup(requests.get(lg_url).text, features = 'lxml').find_all('span')
         self.lg_year = spans[8].text
         self.lg_name = spans[9].text
-        print(f'\n  {self.lg_name}  {self.lg_year}\n')
+        print(f'\n                                   {self.lg_name}  {self.lg_year}\n')
         
         self.links = self.team_links(lg_url)
         self.teams = self.generate_teams()
         self.team_names = [team.team_name for team in self.teams]
+        self.save_league()
 
     def team_links(self, lg_url):
         html = BeautifulSoup(requests.get(lg_url).text, features = 'lxml')
@@ -98,21 +115,34 @@ class League():
 
     def generate_teams(self):
         return [Team('https://baseball-reference.com' + link) for link in self.links]
+
+    def save_league(self):
+        print(f'\n  Saved to csv file path: /Users/jensen/Documents/pyprojects/kzoo/simodel/projected_leagues/{self.lg_name + "_" + self.lg_year}\n')
+        league_df = pd.concat([team.team_df for team in self.teams])
+        league_df.to_csv(f'/Users/jensen/Documents/pyprojects/kzoo/simodel/projected_leagues/{self.lg_name + "_" + self.lg_year}')
         
 class PlayBall():
 
-    def __init__(self):
-        print("\n   - - - - JENSEN'S SUMMER BASEBALL SIMULATOR - - - -\n")
-        self.teams = League(lg_url = 'https://www.baseball-reference.com/register/league.cgi?id=f5c87b08').teams
+    def __init__(self, new = True):
+        print("\n                       - - - - JENSEN'S SUMMER BASEBALL SIMULATOR - - - -\n")
+
+        if new == True:
+            print(f'\n                                          New League\n')
+            self.teams = ProjectNewLeague(lg_url = 'https://www.baseball-reference.com/register/league.cgi?id=f5c87b08').teams
+        
+        if new == False:
+            ''' read a csv from an old projected league '''
+            print('\n       Getting old league\n')
+
 
         # print a list of options for teams to chose from 
         for i in range(len(self.teams)):
-            print(self.teams[i].team_name)
+            print(f'                                    {self.teams[i].team_name}')
         
         # prompt user to choose teams
-        home = input('\nEnter Home team: ')
-        away = input('\nEnter Away team: ')
-        self.num_games = int(input('\nEnter Number of simulated games: '))
+        home = input('\n                                Enter Home team: ')
+        away = input('                                  Enter Away team: ')
+        self.num_games = int(input('                                    Enter Number of simulated games: '))
         # iterate through list of team objects to find the teams
         # that have the matching team names to the ones the user chose
         self.Home = [team for team in self.teams if home == team.team_name][0]
@@ -126,7 +156,7 @@ class PlayBall():
         return 'game'
 
     def results(self):
-        print(f'\---- Results for {self.num_games} simulated games between the {self.Home.team_name} and the {self.Away.team_name} ----')
-        print('simulator not finished yet.')
+        print(f'            ---- Results for {self.num_games} simulated games between the {self.Home.team_name} and the {self.Away.team_name} ----')
+        print('                                                     simulator not finished yet.')
 
-simulation = PlayBall()
+simulation = PlayBall(new = True)
