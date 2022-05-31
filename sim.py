@@ -90,7 +90,7 @@ class Team():
         return [('https://baseball-reference.com' + tag['href']) for tag in a_tags if '/player.fcgi?id=' in tag['href']]
 
     def scrape_player_nums(self):
-        print(f'\n                  Projecting Ranges for players on the {self.year} {self.team_name}\n')
+        print(f'\n                  Projecting players on the {self.year} {self.team_name}\n')
         return [Player(guy) for guy in tqdm(self.player_links)]
 
 class ProjectNewLeague():
