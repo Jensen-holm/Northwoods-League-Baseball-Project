@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from model import my_model
 from model import explanatory_cols
+from model import response_cols
 from tqdm import tqdm 
 import pandas as pd 
 import numpy as np
@@ -64,7 +65,17 @@ class Player():
             df['inpO'] = df['PA'] - (df['H'] - df['SO'] - df['HBP'] - df['SO'] - df['BB'])
             print(df)
             pred = my_model.model.predict(df[[explanatory_cols]])
-            return [[(stat - (my_model.std * num_deviations)), stat + (my_model.std * num_deviations)]for stat in pred]
+            self.tbl = df
+
+            pred_ranges = []
+            for stat in pred:
+                min_ = stat - (my_model.std * num_deviations)
+                max_ = stat + (my_model.std * num_deviations)
+                pred_ranges.append([min_, max_])
+            pred_ranges = zip(pred_ranges, response_cols)
+
+
+            return pred_ranges
             # ''' export a csv containing predicted values before we turn the minto probabilities, if it already exists it will update '''
 
         elif len(df) < 1:
@@ -117,9 +128,9 @@ class ProjectNewLeague():
         return [Team('https://baseball-reference.com' + link) for link in self.links]
 
     def save_league(self):
-        print(f'\n  Saved to csv file path: /Users/jensen/Documents/pyprojects/kzoo/simodel/projected_leagues/{self.lg_name + "_" + self.lg_year}\n')
+        print(f'\n  Saved to csv file path: /Users/user/Documents/python-projects/kzoo/projected_leagues{self.lg_name + "_" + self.lg_year}\n')
         league_df = pd.concat([team.team_df for team in self.teams])
-        league_df.to_csv(f'/Users/jensen/Documents/pyprojects/kzoo/simodel/projected_leagues/{self.lg_name + "_" + self.lg_year}')
+        league_df.to_csv(f'/Users/user/Documents/python-projects/kzoo/projected_leagues/{self.lg_name + "_" + self.lg_year}')
         
 class PlayBall():
 
